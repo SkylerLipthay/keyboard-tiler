@@ -1,19 +1,18 @@
 #!/usr/bin/ruby
 # keyboard-tiler: A CLI to positions windows on the grid of your screen using xdotool
-# Usage: 
+# Usage:
 # keyboard-tiler a/  (This would place the window on the bottom half of your screen)
 
 #The Tiles you want to use for positioning, default is center of US Keyboard
 $tiles = [
-	[ '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' ],
-	[ 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p' ],
-	[ 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';' ],
-	[ 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/' ]
+	[ 'q', 'w', 'e', 'r', 't' ],
+	[ 'a', 's', 'd', 'f', 'g' ],
+	[ 'z', 'x', 'c', 'v', 'b' ]
 ]
 #Height of your window decorations, just set 0 if none
-$decorationsHeight = 20
+$decorationsHeight = 0
 
-def repositionWindow(squareA, squareB, screen) 
+def repositionWindow(squareA, squareB, screen)
 
 	gridDimensions = {
 		:width => $tiles[0].length,
@@ -39,7 +38,7 @@ def repositionWindow(squareA, squareB, screen)
 
 	#Figure out how big to resize to
 	newWidth = (squareB[:x] - squareA[:x] + 1) * widthFactor
-	newHeight = (squareB[:y] - squareA[:y] + 1) * heightFactor 
+	newHeight = (squareB[:y] - squareA[:y] + 1) * heightFactor
 
 	#Fire to xdotool move and resize commands
 	%x[xdotool getactivewindow windowmove --sync #{startX} #{$decorationsHeight + startY}]
@@ -54,22 +53,22 @@ def main
 		:x		=> xwin.scan(/Absolute upper-left X:\s+(\d+)/).join.to_i,
 		:y		=> xwin.scan(/Absolute upper-left Y:\s+(\d+)/).join.to_i,
 		:width	=> xwin.scan(/Width:\s+(\d+)/).join.to_i,
-		:height	=> xwin.scan(/Height:\s+(\d+)/).join.to_i	
+		:height	=> xwin.scan(/Height:\s+(\d+)/).join.to_i
 	}
 
 	#Get the Screens Dimensions from xrandr
 	screens = {}
-	%x[xrandr --current].scan(/(.+) connected (\d+)x(\d+)+/).each_with_index.map do |screen, screenNumber|
+	%x[xrandr --current].scan(/(.+) connected (primary )?(\d+)x(\d+)+/).each_with_index.map do |screen, screenNumber|
 		screens[screenNumber]= {
 			:name		=>  screen[0],
-			:width		=>  screen[1].to_i,
-			:height		=>  screen[2].to_i,
+			:width		=>  screen[2].to_i,
+			:height		=>  screen[3].to_i,
 			:offsetX	=> 	0
 		}
 	end
 
 	#Add offset if the window's x more than the first screen's width
-	if (window[:x] > screens[0][:width]) then
+	if (window[:x] >= screens[0][:width]) then
 		screenNumber = 1
 		screens[1][:offsetX] = screens[0][:width]
 	else
@@ -87,7 +86,7 @@ def main
 				end
 			end
 		end
-	end	
+	end
 
 	repositionWindow(pairs[:start], pairs[:end], screens[screenNumber])
 end
